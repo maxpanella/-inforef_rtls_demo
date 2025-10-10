@@ -1,6 +1,919 @@
 <!DOCTYPE html>
 <html lang="it">
-<!-- ... (contenuto completo come fornito sopra: demo Live + Camera Linkage, Info & Contatti, impostazioni, ecc.) ... -->
-<!-- VERSIONE COMPLETA, pronta per GitHub Pages -->
-<!-- Vedi messaggi precedenti per il codice integrale -->
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>RTLS Core + ERP | Anagrafiche, Posizionamento, Compliance, Qualifiche (Live + Camera Linkage)</title>
+  <link href="https://fonts.googleapis.com/css?family=Montserrat:600,400&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+  <style>
+    :root{
+      --primary:#2c5aa0; --secondary:#00a79d; --accent:#ff6b35; --light:#f8f9fa; --dark:#2c3e50;
+      --success:#28a745; --warning:#ffc107; --danger:#dc3545;
+      --panel:#fff; --panel-border:#e5e5ee; --text:var(--dark); --bg:var(--light);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:'Montserrat',Arial,sans-serif;background:var(--bg);color:var(--text);}
+    .dashboard{display:flex;min-height:100vh;}
+    .sidebar{width:270px;background:var(--dark);color:#fff;display:flex;flex-direction:column;padding:20px 16px;gap:10px}
+    .logo{text-align:center;margin-bottom:6px}
+    .logo img{max-width:150px}
+    .group{display:flex;flex-direction:column;gap:8px}
+    .sidebar label{font-size:.95rem}
+    .sidebar select,.sidebar input{width:100%;padding:10px;border-radius:8px;border:2px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:#fff;font-family:inherit}
+    .btn{width:100%;padding:10px 12px;border:none;border-radius:8px;background:var(--accent);color:#fff;font-weight:700;cursor:pointer}
+    .btn.alt{background:var(--primary)}
+    .btn.ghost{background:transparent;border:2px solid rgba(255,255,255,.35);color:#fff}
+    .content{flex:1;display:flex;flex-direction:column}
+    .topbar{background:var(--panel);border-bottom:1px solid var(--panel-border);padding:12px 20px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+    .chips{display:flex;gap:8px;flex-wrap:wrap}
+    .chip{background:var(--primary);color:#fff;border-radius:999px;padding:6px 10px;font-weight:700;font-size:.88rem}
+    .view-switch{background:var(--panel);border-bottom:1px solid var(--panel-border);padding:10px 20px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .view-switch button{border:2px solid var(--primary);background:transparent;color:var(--primary);padding:7px 14px;border-radius:8px;font-weight:700;cursor:pointer}
+    .view-switch button.active{background:var(--primary);color:#fff}
+    .live-wrap{margin-left:auto;display:flex;align-items:center;gap:10px}
+    .live-toggle{display:inline-flex;align-items:center;gap:8px;border:2px solid var(--secondary);border-radius:999px;padding:6px 10px;color:var(--secondary);cursor:pointer;font-weight:700;background:transparent}
+    .live-toggle.on{background:var(--secondary);color:#fff}
+    .notice{width:96%;max-width:1100px;margin:10px auto 0;background:#fff3e0;border:1px solid #ffe0c2;color:#8a4b10;padding:8px 10px;border-radius:8px;display:none}
+    .mainmap{padding:14px 0 0;display:flex;flex-direction:column;align-items:center}
+    .map-wrap{width:96%;max-width:1100px;height:520px;border:2px solid var(--primary);border-radius:18px;overflow:hidden;position:relative;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.08)}
+    .map-img{width:100%;height:100%;object-fit:cover;display:block}
+    .zone{position:absolute;border:2px dashed rgba(44,90,160,.6);background:rgba(44,90,160,.08);border-radius:12px;color:#0f274f;font-weight:700;font-size:.85rem;display:flex;align-items:center;justify-content:center;pointer-events:none}
+    .zone.restricted{border-color:rgba(255,107,53,.8);background:rgba(255,107,53,.08);color:#7a2f1a}
+    .asset-dot{position:absolute;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.05rem;border:2px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.15);cursor:pointer;transition:transform .2s, left .8s linear, top .8s linear}
+    .asset-dot:hover{transform:scale(1.08)}
+    .selected{outline:4px solid rgba(44,90,160,.18)}
+    .blink{animation:blink .9s infinite alternate}
+    @keyframes blink{0%{filter:brightness(.75)}100%{filter:brightness(1.2)}}
+    .dot-ecg{background:var(--primary)} .dot-monitor{background:var(--secondary)} .dot-defib{background:var(--danger)}
+    .dot-estintore{background:#e65b2e}
+    .dot-ventilatore{background:var(--accent)} .dot-tc{background:#1e3a8a} .dot-rm{background:#224b87}
+    .dot-eco{background:#009b91} .dot-tens{background:#ff7f54} .dot-laser{background:#c43f23} .dot-fisica{background:var(--success)}
+    .dot-medico{background:var(--primary)} .dot-responsabile{background:var(--secondary)} .dot-assistente{background:var(--success)} .dot-visitatore{background:#9aa5b1}
+    .label{position:absolute;background:#fff;border:1px solid #edf0f4;border-radius:8px;padding:4px 8px;font-size:.9rem;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+    .always-labels .label{display:block}
+    .hover-labels .label{display:none}
+    .hover-labels .asset-dot:hover + .label{display:block}
+    .no-labels .label{display:none!important}
+    .asset-list{width:96%;max-width:1100px;margin:16px auto;background:#fff;border:1px solid var(--panel-border);border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+    .asset-list .toolbar{display:flex;gap:10px;padding:12px 14px;border-bottom:1px solid var(--panel-border);flex-wrap:wrap}
+    .search{flex:1;min-width:220px;padding:9px;border:2px solid #e0e6ef;border-radius:8px}
+    .filter-chip{background:#eef4ff;color:var(--primary);border:1px solid #d4e1ff;border-radius:999px;padding:5px 10px;font-weight:700;cursor:pointer}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px;border-bottom:1px solid var(--panel-border);text-align:left;font-size:.95rem}
+    th{background:#f6fafc;font-weight:700}
+    tr:hover{background:#f9fcff}
+    .pill{display:inline-block;padding:3px 8px;border-radius:999px;font-weight:700;font-size:.85rem;cursor:pointer}
+    .pill-ok{background:#e8f5e8;color:var(--success)}
+    .pill-due{background:#fff8e1;color:#b88700}
+    .pill-over{background:#ffebee;color:var(--danger)}
+    .pill-risk{background:#fdecea;color:#b3261e}
+    .state-pill{background:#eef4ff;color:var(--primary)}
+    .hidden{display:none!important}
+    @media (max-width:980px){.dashboard{flex-direction:column}.sidebar{width:100%;flex-wrap:wrap;gap:10px}.map-wrap{height:360px}}
+
+    /* Modal base */
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:999}
+    .modal.open{display:flex}
+    .card{background:#fff;color:var(--text);width:min(980px, 94vw);border-radius:16px;border:1px solid var(--panel-border);padding:16px 16px 10px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    .card h3{margin:0 0 12px}
+    .row{display:flex;gap:10px;margin:6px 0;flex-wrap:wrap}
+    .footer{display:flex;justify-content:space-between;gap:10px;margin-top:12px;align-items:center}
+    .btn-close{border:1px solid var(--panel-border);background:#fff;border-radius:8px;padding:8px 12px;cursor:pointer}
+    .maint-list{margin-top:6px;border-top:1px solid #eee}
+    .maint-item{padding:10px 4px;border-bottom:1px solid #f0f0f0;display:grid;grid-template-columns:120px 140px 1fr;gap:10px}
+    .maint-item strong{color:var(--primary)}
+    .settings input[type="text"], .settings input[type="number"], .settings select{padding:8px;border:1px solid #d8dee9;border-radius:8px}
+
+    /* Info & Contatti – stile referenti */
+    .section-title{font-size:1.2rem;font-weight:700;color:var(--dark);margin:8px 0 12px;position:relative}
+    .section-title:after{content:'';display:block;width:80px;height:4px;background:var(--accent);margin:8px 0 0;border-radius:2px}
+    .referenti-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;margin-bottom:14px}
+    .ref-card{background:#fff;border-radius:16px;padding:16px;border:1px solid #edf1f7;box-shadow:0 8px 22px rgba(0,0,0,.08);position:relative;overflow:hidden}
+    .ref-card:before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--primary),var(--secondary))}
+    .ref-head{display:flex;gap:14px;align-items:flex-start;margin-bottom:10px}
+    .ref-avatar{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--primary) 0%,var(--secondary) 100%);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+    .ref-avatar span{font-size:1.2rem}
+    .ref-info h4{margin:0 0 4px 0;font-size:1.1rem}
+    .ref-role{color:var(--primary);font-weight:600;font-size:.98rem}
+    .ref-company{color:#666;font-size:.92rem}
+    .ref-details{margin-top:8px}
+    .ref-detail{display:flex;align-items:center;gap:8px;padding:8px;border-radius:10px;background:#f6f8fb;margin-bottom:8px}
+    .ref-detail i{color:var(--primary);width:18px}
+    .ref-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+    .mini-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid #d6deee;background:#fff;border-radius:10px;padding:7px 10px;cursor:pointer;color:var(--primary);font-weight:700}
+    .mini-btn.primary{background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff;border:none}
+    .company-box{background:#fff;border-radius:16px;padding:16px;border-left:5px solid var(--accent);box-shadow:0 6px 18px rgba(0,0,0,.07)}
+    .company-header{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+    .company-header i{color:var(--primary)}
+    .company-title{font-size:1.1rem;font-weight:700}
+    .company-details{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:10px}
+    .company-item{display:flex;align-items:center;gap:8px;padding:8px;border-radius:10px;background:linear-gradient(135deg,#f8fbff 0%,#eef3fb 100%)}
+    .company-item i{color:var(--primary)}
+
+    /* Camera modal */
+    .cam-header{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+    .cam-title{font-size:1.05rem;font-weight:700}
+    .cam-body{display:grid;grid-template-columns:2fr 1fr;gap:12px}
+    .cam-video-wrap{background:#000;border-radius:12px;overflow:hidden;min-height:260px;border:1px solid #111}
+    .cam-video{width:100%;height:100%;max-height:420px;background:#000}
+    .cam-iframe{width:100%;height:100%;min-height:260px;border:0;display:none;background:#000}
+    .cam-meta{background:#fafbfe;border:1px solid #e6ebf5;border-radius:12px;padding:10px}
+    .cam-row{margin:6px 0}
+    .cam-log{margin-top:8px;max-height:240px;overflow:auto;border-top:1px dashed #d9e2f0;padding-top:8px;font-size:.92rem}
+    .cam-log-item{padding:6px 0;border-bottom:1px dotted #e9eef7}
+    .cam-log-item:last-child{border-bottom:0}
+    .cam-indicator{display:inline-flex;align-items:center;gap:6px;background:#e6fff4;color:#0b6b41;border:1px solid #b2f0d3;padding:4px 8px;border-radius:999px;font-weight:700;font-size:.82rem}
+  </style>
+</head>
+<body>
+<div class="dashboard">
+  <aside class="sidebar">
+    <div class="logo">
+      <img src="https://mediterraneadiagnostica.com/wp-content/uploads/2023/12/LOGO-ME.DI_-e1702474080475.png" alt="ME.DI"/>
+      <div>RTLS Demo</div>
+    </div>
+
+    <div class="group">
+      <label for="filter-cat">Filtro categoria</label>
+      <select id="filter-cat">
+        <option value="">Tutte</option>
+        <option value="medico">Medici</option>
+        <option value="assistente">Assistenti</option>
+        <option value="responsabile">Responsabili</option>
+        <option value="visitatore">Visitatori</option>
+        <option value="ecg">ECG</option>
+        <option value="monitor">Monitor</option>
+        <option value="defib">Defibrillatori</option>
+        <option value="estintore">Estintori</option>
+        <option value="ventilatore">Ventilatori</option>
+        <option value="tc">TC</option>
+        <option value="rm">RM</option>
+        <option value="eco">Ecografi</option>
+        <option value="tens">Terapia dolore</option>
+        <option value="laser">Laser</option>
+        <option value="fisica">Terapia fisica</option>
+      </select>
+    </div>
+
+    <div class="group">
+      <button class="btn" id="btn-info"><i class="fa-solid fa-address-card"></i> Info & Contatti</button>
+      <button class="btn alt" id="btn-settings"><i class="fa-solid fa-sliders"></i> Impostazioni</button>
+    </div>
+
+    <div class="group">
+      <button class="btn" id="btn-sync"><i class="fa-solid fa-arrows-rotate"></i> Sync ERP/CMMS</button>
+      <button class="btn alt" id="btn-check"><i class="fa-solid fa-user-shield"></i> Check Qualifiche</button>
+      <button class="btn ghost" id="btn-access"><i class="fa-solid fa-person-walking-arrow-right"></i> Test Accesso Zona</button>
+    </div>
+  </aside>
+
+  <main class="content">
+    <div class="topbar">
+      <div><strong>Core</strong>: anagrafiche + posizionamento • <strong>ERP</strong>: referenziazione, compliance, qualifiche</div>
+      <div class="chips">
+        <div class="chip" id="chip-total">0 risorse</div>
+        <div class="chip" id="chip-visible">0 visibili</div>
+        <div class="chip" id="chip-erp">Ultimo sync ERP: mai</div>
+      </div>
+    </div>
+
+    <div class="view-switch">
+      <button id="btn-dashboard" class="active">Dashboard</button>
+      <button id="btn-mappa">Solo Mappa</button>
+      <button id="btn-lista">Solo Lista</button>
+
+      <div class="live-wrap">
+        <button id="btn-live" class="live-toggle" title="Avvia/arresta animazione lenta automatica"><i class="fa-solid fa-wave-square"></i> Live: OFF</button>
+      </div>
+    </div>
+
+    <div id="notice" class="notice"></div>
+
+    <section class="mainmap" id="mainmap">
+      <div class="map-wrap hover-labels" id="map-wrap" data-label-mode="hover">
+        <img class="map-img" id="map-img"
+             src="https://d365eiv1xdqada.cloudfront.net/4hnan%2Fpreview%2F71630765%2Fmain_large.jpg?response-content-disposition=inline%3Bfilename%3D%22main_large.jpg%22%3B&response-content-type=image%2Fjpeg&Expires=1760025665&Signature=Ku6olLaQM20JtrQ7WR4Q2oEgFJDY9kzH7fcWfQKkud611oLoV2kIe~oSEQ4und484Y9diUM5c8T-plCeXHM1Fst0bN0sVZHq7nAD4Zu9EcVBPjN0r3UO8q~OADWUIhRMnemRgf1ApSNl~dbjNfB~6OQRBAP91dkLPFj63D8Ssrt~X9PR91EJpg8YprtaUWFRGPgqOT5UycoRoDQDLRd-91DqeFocRRB2xfIayQ2wzCgeNmNOMtMz552oat72SZpd7jJesIgVzgylGD12CrU6D-Lk-6l~xRSZjzB4kIEPjkhsWys3-C0~eZg6nDreIDa8hLTI7ostgAPvMxk06BqKdg__&Key-Pair-Id=APKAJT5WQLLEOADKLHBQ"
+             alt="Mappa ME.DI"/>
+        <div class="zone restricted" id="zone-tc"  data-key="Sala TC"      data-left="28" data-top="10" data-w="18" data-h="20" style="left:28%;top:10%;width:18%;height:20%;">Sala TC (restr.)</div>
+        <div class="zone restricted" id="zone-rm"  data-key="Sala RM"      data-left="6"  data-top="10" data-w="18" data-h="22" style="left:6%;top:10%;width:18%;height:22%;">Sala RM (restr.)</div>
+        <div class="zone"              id="zone-eco" data-key="Ecografia"    data-left="12" data-top="38" data-w="18" data-h="16" style="left:12%;top:38%;width:18%;height:16%;">Ecografia</div>
+        <div class="zone"              id="zone-mag" data-key="Magazzino"    data-left="60" data-top="62" data-w="18" data-h="16" style="left:60%;top:62%;width:18%;height:16%;">Magazzino</div>
+        <div class="zone"              id="zone-att" data-key="Sala Attesa"  data-left="72" data-top="18" data-w="18" data-h="16" style="left:72%;top:18%;width:18%;height:16%;">Sala Attesa</div>
+      </div>
+    </section>
+
+    <section class="asset-list" id="asset-list-wrap">
+      <div class="toolbar">
+        <input id="search" class="search" placeholder="Cerca nome, tag, tipo, posizione, ref..."/>
+        <span id="active-filters"></span>
+      </div>
+      <table id="asset-table">
+        <thead>
+        <tr>
+          <th>Risorsa</th>
+          <th>Tipo</th>
+          <th>Badge/TAG</th>
+          <th>Posizione (mappa)</th>
+          <th>Riferimento (ERP)</th>
+          <th>Stato</th>
+          <th>Compliance</th>
+          <th>Rischio</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
+</div>
+
+<!-- Modale Manutenzioni -->
+<div id="modal-maint" class="modal">
+  <div class="card">
+    <h3>Dettaglio Manutenzioni</h3>
+    <div class="row"><strong>Risorsa:</strong> <span id="maint-name"></span></div>
+    <div class="row"><strong>TAG/Seriale:</strong> <span id="maint-tag"></span></div>
+    <div class="row"><strong>Categoria:</strong> <span id="maint-cat"></span></div>
+    <div class="row"><strong>Riferimento (ERP):</strong> <span id="maint-ref"></span></div>
+    <div class="row"><strong>Compliance corrente:</strong> <span id="maint-compliance"></span></div>
+    <div class="maint-list" id="maint-list"></div>
+    <div class="footer">
+      <button class="btn-close" id="maint-close"><i class="fa-solid fa-xmark"></i> Chiudi</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modale Impostazioni -->
+<div id="modal-settings" class="modal">
+  <div class="card settings">
+    <h3>Impostazioni</h3>
+    <div class="row">
+      <label for="set-map-url" style="min-width:180px">URL immagine mappa</label>
+      <input type="text" id="set-map-url" style="flex:1"
+             value="https://d365eiv1xdqada.cloudfront.net/4hnan%2Fpreview%2F71630765%2Fmain_large.jpg?response-content-disposition=inline%3Bfilename%3D%22main_large.jpg%22%3B&response-content-type=image%2Fjpeg&Expires=1760025665&Signature=Ku6olLaQM20JtrQ7WR4Q2oEgFJDY9kzH7fcWfQKkud611oLoV2kIe~oSEQ4und484Y9diUM5c8T-plCeXHM1Fst0bN0sVZHq7nAD4Zu9EcVBPjN0r3UO8q~OADWUIhRMnemRgf1ApSNl~dbjNfB~6OQRBAP91dkLPFj63D8Ssrt~X9PR91EJpg8YprtaUWFRGPgqOT5UycoRoDQDLRd-91DqeFocRRB2xfIayQ2wzCgeNmNOMtMz552oat72SZpd7jJesIgVzgylGD12CrU6D-Lk-6l~xRSZjzB4kIEPjkhsWys3-C0~eZg6nDreIDa8hLTI7ostgAPvMxk06BqKdg__&Key-Pair-Id=APKAJT5WQLLEOADKLHBQ"/>
+    </div>
+    <div class="row">
+      <label for="set-label-mode" style="min-width:180px">Etichette mappa</label>
+      <select id="set-label-mode">
+        <option value="none">Nessuna</option>
+        <option value="hover" selected>Solo on-hover</option>
+        <option value="always">Sempre visibili</option>
+      </select>
+    </div>
+    <div class="row">
+      <label for="set-map-height" style="min-width:180px">Altezza mappa (px)</label>
+      <input type="number" id="set-map-height" min="280" max="900" step="10" value="520"/>
+    </div>
+
+    <div class="row" style="margin-top:8px"><strong>Camera Linkage</strong></div>
+    <div class="row">
+      <label><input type="checkbox" id="set-cam-enabled" checked> Abilita camera linkage</label>
+    </div>
+    <div class="row">
+      <label><input type="checkbox" id="set-cam-autoopen" checked> Apri modale telecamera automaticamente</label>
+    </div>
+    <div class="row">
+      <label><input type="checkbox" id="set-cam-beep" checked> Segnale acustico su attivazione</label>
+    </div>
+    <div class="row">
+      <label style="min-width:180px">Feed Sala RM</label>
+      <input type="text" id="set-cam-rm" style="flex:1" placeholder="URL mp4/iframe" value="https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_1MB.mp4"/>
+    </div>
+    <div class="row">
+      <label style="min-width:180px">Feed Sala TC</label>
+      <input type="text" id="set-cam-tc" style="flex:1" placeholder="URL mp4/iframe" value="https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_1MB.mp4"/>
+    </div>
+    <div class="row">
+      <label style="min-width:180px">Feed Ecografia</label>
+      <input type="text" id="set-cam-eco" style="flex:1" placeholder="URL mp4/iframe" value="https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_1MB.mp4"/>
+    </div>
+    <div class="row">
+      <label style="min-width:180px">Feed Magazzino</label>
+      <input type="text" id="set-cam-mag" style="flex:1" placeholder="URL mp4/iframe" value=""/>
+    </div>
+    <div class="row">
+      <label style="min-width:180px">Feed Sala Attesa</label>
+      <input type="text" id="set-cam-att" style="flex:1" placeholder="URL mp4/iframe" value=""/>
+    </div>
+
+    <div class="footer">
+      <button class="btn-close" id="settings-cancel"><i class="fa-solid fa-xmark"></i> Annulla</button>
+      <button class="btn alt" id="settings-apply"><i class="fa-solid fa-check"></i> Applica</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modale Info & Contatti migliorata -->
+<div id="modal-info-panel" class="modal">
+  <div class="card">
+    <h3><i class="fa-solid fa-handshake"></i> Info & Contatti</h3>
+
+    <div class="section-title">I Nostri Referenti</div>
+    <div class="referenti-grid">
+      <div class="ref-card">
+        <div class="ref-head">
+          <div class="ref-avatar"><span>MP</span></div>
+          <div class="ref-info">
+            <h4>M. Panella</h4>
+            <div class="ref-role">PM InfoREF • Responsabile Progetto</div>
+            <div class="ref-company">Infotel Sistemi</div>
+          </div>
+        </div>
+        <div class="ref-details">
+          <div class="ref-detail"><i class="fa-solid fa-envelope"></i><span id="mp-email">m.panella@infotelsistemi.com</span></div>
+          <div class="ref-detail"><i class="fa-solid fa-phone"></i><span id="mp-phone">+39 02 1234 5678</span></div>
+        </div>
+        <div class="ref-actions">
+          <a class="mini-btn primary" href="mailto:m.panella@infotelsistemi.com"><i class="fa-solid fa-paper-plane"></i> Email</a>
+          <a class="mini-btn" href="tel:+390212345678"><i class="fa-solid fa-phone"></i> Chiama</a>
+          <button class="mini-btn" onclick="copyText('#mp-email')"><i class="fa-regular fa-copy"></i> Copia email</button>
+          <button class="mini-btn" onclick="downloadVCard({fn:'M. Panella',org:'Infotel Sistemi',title:'PM InfoREF - Responsabile Progetto',email:'m.panella@infotelsistemi.com',tel:'+39 02 1234 5678'})"><i class="fa-regular fa-address-card"></i> vCard</button>
+        </div>
+      </div>
+
+      <div class="ref-card">
+        <div class="ref-head">
+          <div class="ref-avatar"><span>MD</span></div>
+          <div class="ref-info">
+            <h4>Ing. Mario De Vita</h4>
+            <div class="ref-role">Strategic Innovation Lead</div>
+            <div class="ref-company">Network GTC</div>
+          </div>
+        </div>
+        <div class="ref-details">
+          <div class="ref-detail"><i class="fa-solid fa-envelope"></i><span id="md-email">m.devita@networkgtc.it</span></div>
+          <div class="ref-detail"><i class="fa-solid fa-phone"></i><span id="md-phone">+39 331 1329985</span></div>
+        </div>
+        <div class="ref-actions">
+          <a class="mini-btn primary" href="mailto:m.devita@networkgtc.it"><i class="fa-solid fa-paper-plane"></i> Email</a>
+          <a class="mini-btn" href="tel:+393311329985"><i class="fa-solid fa-phone"></i> Chiama</a>
+          <a class="mini-btn" href="https://wa.me/393311329985?text=Salve%20Ing.%20De%20Vita%2C%20vorrei%20informazioni%20sulla%20demo%20RTLS." target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
+          <button class="mini-btn" onclick="copyText('#md-email')"><i class="fa-regular fa-copy"></i> Copia email</button>
+          <button class="mini-btn" onclick="downloadVCard({fn:'Ing. Mario De Vita',org:'Network GTC',title:'Strategic Innovation Lead',email:'m.devita@networkgtc.it',tel:'+39 331 1329985'})"><i class="fa-regular fa-address-card"></i> vCard</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">Infotel Sistemi</div>
+    <div class="company-box">
+      <div class="company-header">
+        <i class="fa-solid fa-satellite-dish"></i>
+        <div class="company-title">Partner Ufficiale</div>
+      </div>
+      <div class="company-details">
+        <div class="company-item"><i class="fa-solid fa-globe"></i><a href="https://www.infotelsistemi.com" target="_blank" rel="noopener">www.infotelsistemi.com</a></div>
+        <div class="company-item"><i class="fa-solid fa-envelope"></i><a href="mailto:info@infotelsistemi.com">info@infotelsistemi.com</a></div>
+        <div class="company-item"><i class="fa-solid fa-phone"></i><a href="tel:+390212345678">+39 02 1234 5678</a></div>
+        <div class="company-item"><i class="fa-solid fa-map-marker-alt"></i><span>Corso Buenos Aires, 45 - 20124 Milano</span></div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <button class="btn-close" id="info-close"><i class="fa-solid fa-xmark"></i> Chiudi</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <a class="mini-btn" href="mailto:info@infotelsistemi.com?subject=Richiesta%20demo%20RTLS%20ME.DI&body=Buongiorno%2C%20gradirei%20una%20demo%20personalizzata."><i class="fa-solid fa-envelope-open-text"></i> Richiedi Preventivo</a>
+        <a class="mini-btn primary" href="#" onclick="closeInfo(); document.getElementById('btn-live').click(); return false;"><i class="fa-solid fa-play"></i> Avvia Live Demo</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modale Telecamera (Camera Linkage) -->
+<div id="modal-camera" class="modal">
+  <div class="card">
+    <div class="cam-header">
+      <div class="cam-title"><i class="fa-solid fa-video"></i> TVCC • <span id="cam-zone">-</span> <span id="cam-ind" class="cam-indicator" style="display:none"><i class="fa-solid fa-circle-dot"></i> LIVE</span></div>
+      <button class="btn-close" id="cam-close"><i class="fa-solid fa-xmark"></i> Chiudi</button>
+    </div>
+    <div class="cam-body">
+      <div class="cam-video-wrap">
+        <video id="cam-video" class="cam-video" controls autoplay muted loop playsinline></video>
+        <iframe id="cam-iframe" class="cam-iframe" referrerpolicy="no-referrer"></iframe>
+      </div>
+      <div class="cam-meta">
+        <div class="cam-row"><strong>Ultimo evento:</strong> <span id="cam-last">-</span></div>
+        <div class="cam-row"><strong>Feed:</strong> <a id="cam-link" href="#" target="_blank" rel="noopener">Apri in nuova scheda</a></div>
+        <div class="cam-log" id="cam-log"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Stato
+  let lastErpSync = null;
+  let selectedPersonId = null;
+  let selectedDeviceId = null;
+  let liveOn = false;
+  let liveTimer = null;
+  let complianceFilter = null, riskFilter = null, stateFilter = null;
+
+  const HUMAN_CATS = ['medico','assistente','responsabile','visitatore'];
+  const DEVICE_CATS = ['ecg','monitor','defib','estintore','ventilatore','tc','rm','eco','tens','laser','fisica'];
+  const MAINT_CATS  = ['defib','estintore','ecg','ventilatore','tc','rm','eco','laser','fisica'];
+
+  const settings = {
+    labelMode: 'hover',
+    mapHeight: 520,
+    camera: {
+      enabled: true,
+      autoOpen: true,
+      beep: true,
+      feeds: {
+        'Sala RM':     'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_1MB.mp4',
+        'Sala TC':     'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_1MB.mp4',
+        'Ecografia':   'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_1MB.mp4',
+        'Magazzino':   '',
+        'Sala Attesa': ''
+      }
+    }
+  };
+
+  const data = [
+    { id:'p-001', nome:'Medico 01', categoria:'medico', tag:'A1234', posizione:'Sala Attesa', refSpace:'Sala Attesa', x:78, y:22, stato:'presente',
+      quals:['ECG-OP','RM-ACCESS'], zoneAccess:['Sala RM','Sala TC'] },
+    { id:'p-002', nome:'Medico 02', categoria:'medico', tag:'A1235', posizione:'Sala Attesa', refSpace:'Sala Attesa', x:81, y:24, stato:'presente',
+      quals:['TC-ACCESS'], zoneAccess:['Sala TC'] },
+    { id:'p-003', nome:'Assistente 01', categoria:'assistente', tag:'S1001', posizione:'Sala Attesa', refSpace:'Ecografia', x:75, y:20, stato:'presente',
+      quals:['ECO-OP'], zoneAccess:['Ecografia'] },
+    { id:'p-004', nome:'Assistente 02', categoria:'assistente', tag:'S1002', posizione:'Sala Attesa', refSpace:'Magazzino', x:72, y:30, stato:'presente',
+      quals:[], zoneAccess:['Magazzino'] },
+    { id:'p-005', nome:'Responsabile 01', categoria:'responsabile', tag:'R9001', posizione:'Sala Attesa', refSpace:'Sala TC', x:86, y:20, stato:'presente',
+      quals:['ECG-OP','TC-ACCESS'], zoneAccess:['Sala RM','Sala TC'] },
+    { id:'p-006', nome:'Visitatore 01', categoria:'visitatore', tag:'V3001', posizione:'Corridoio', refSpace:'Ingresso', x:51, y:39, stato:'presente',
+      quals:[], zoneAccess:[] },
+
+    { id:'d-ecg-001', nome:'ECG Philips', categoria:'ecg', tag:'ECG-1001', posizione:'Amb. Cardiologia', refSpace:'Amb. Cardiologia', x:16, y:20, stato:'active',
+      requiredQuals:['ECG-OP'], risk:'elettromedicale',
+      compliance:{status:'ok', due:'2026-03-31'},
+      history:[{date:'2025-03-10', type:'Verifica funzionale', result:'OK', note:'Test segnali STD'},{date:'2024-03-05', type:'Calibrazione', result:'OK', note:'Aggiornamento firmware'}] },
+    { id:'d-def-001', nome:'Defibrillatore Zoll', categoria:'defib', tag:'DEF-3001', posizione:'Magazzino', refSpace:'Magazzino', x:40, y:41, stato:'active',
+      requiredQuals:[], risk:'safety-critical',
+      compliance:{status:'due', due:'2025-12-15'},
+      history:[{date:'2025-01-12', type:'Controllo batteria', result:'OK', note:'Capacità 92%'},{date:'2024-07-10', type:'Sostituzione pad', result:'OK', note:'Pad nuovi sigillati'}] },
+    { id:'d-est-001', nome:'Estintore A1', categoria:'estintore', tag:'EST-1401', posizione:'Corridoio', refSpace:'Corridoio', x:50, y:37, stato:'active',
+      requiredQuals:[], risk:'safety-critical',
+      compliance:{status:'ok', due:'2026-08-30'},
+      history:[{date:'2025-08-30', type:'Revisione periodica', result:'OK', note:'Sigillo integro'},{date:'2024-08-30', type:'Collaudo', result:'OK', note:'Pressione nominale'}] },
+    { id:'d-vent-001', nome:'Ventilatore Hamilton', categoria:'ventilatore', tag:'VEN-4001', posizione:'Sala TC', refSpace:'Sala TC', x:38, y:22, stato:'active',
+      requiredQuals:[], risk:'elettromedicale',
+      compliance:{status:'ok', due:'2026-01-20'},
+      history:[{date:'2025-01-20', type:'Verifica flussi', result:'OK', note:'Allineamento sensori'}] },
+    { id:'d-tc-001', nome:'TC Siemens', categoria:'tc', tag:'TC-5001', posizione:'Sala TC', refSpace:'Sala TC', x:32, y:19, stato:'active',
+      requiredQuals:['TC-ACCESS'], risk:'elettromedicale',
+      compliance:{status:'ok', due:'2026-05-10'},
+      history:[{date:'2025-05-10', type:'Manut. programmata', result:'OK', note:'Sistema raffreddamento'}] },
+    { id:'d-rm-001', nome:'RM Philips', categoria:'rm', tag:'RM-6001', posizione:'Sala RM', refSpace:'Sala RM', x:9, y:21, stato:'active',
+      requiredQuals:['RM-ACCESS'], risk:'elettromedicale',
+      compliance:{status:'due', due:'2025-11-15'},
+      history:[{date:'2024-11-15', type:'Risonanza coils check', result:'OK', note:'Coils tutte ok'}] },
+    { id:'d-eco-001', nome:'Ecografo Mindray', categoria:'eco', tag:'ECO-7001', posizione:'Ecografia', refSpace:'Ecografia', x:13, y:38, stato:'active',
+      requiredQuals:['ECO-OP'], risk:'elettromedicale',
+      compliance:{status:'over', due:'2025-08-01'},
+      history:[{date:'2025-02-10', type:'Pulizia sonde', result:'OK', note:'Sonda convex & lineare'},{date:'2024-08-01', type:'Verifica', result:'OK', note:'Allineamento immagini'}] },
+    { id:'d-tens-001', nome:'TENS Globus', categoria:'tens', tag:'TENS-8001', posizione:'Terapia del dolore', refSpace:'Terapia del dolore', x:63, y:25, stato:'active',
+      requiredQuals:[], risk:'basso',
+      compliance:{status:'ok', due:'2026-06-01'},
+      history:[{date:'2025-06-01', type:'Verifica', result:'OK', note:''}] },
+    { id:'d-laser-001', nome:'Laser LUMIX', categoria:'laser', tag:'LASER-9001', posizione:'Dermatologia', refSpace:'Dermatologia', x:84, y:36, stato:'active',
+      requiredQuals:[], risk:'elettromedicale',
+      compliance:{status:'ok', due:'2026-02-01'},
+      history:[{date:'2025-02-01', type:'Taratura', result:'OK', note:''}] },
+    { id:'d-fis-001', nome:'Magnetica BTL', categoria:'fisica', tag:'FIS-1001', posizione:'Fisioterapia', refSpace:'Fisioterapia', x:77, y:40, stato:'active',
+      requiredQuals:[], risk:'elettromedicale',
+      compliance:{status:'ok', due:'2026-04-01'},
+      history:[{date:'2025-04-01', type:'Verifica', result:'OK', note:''}] }
+  ];
+
+  // Utility
+  function dotMeta(cat){
+    const map = {
+      ecg:{i:'📈',c:'dot-ecg'}, monitor:{i:'🖥️',c:'dot-monitor'},
+      defib:{i:'⚡',c:'dot-defib'}, estintore:{i:'🧯',c:'dot-estintore'},
+      ventilatore:{i:'💨',c:'dot-ventilatore'}, tc:{i:'🌐',c:'dot-tc'},
+      rm:{i:'🧲',c:'dot-rm'}, eco:{i:'🔊',c:'dot-eco'}, tens:{i:'🔌',c:'dot-tens'},
+      laser:{i:'💡',c:'dot-laser'}, fisica:{i:'🏋️',c:'dot-fisica'},
+      medico:{i:'🩺',c:'dot-medico'}, responsabile:{i:'👨‍⚕️',c:'dot-responsabile'},
+      assistente:{i:'🧑‍🤝‍🧑',c:'dot-assistente'}, visitatore:{i:'🧑',c:'dot-visitatore'}
+    };
+    return map[cat] || {i:'•',c:'dot-ecg'};
+  }
+  function statusLabel(s){ if(s==='active')return'Attivo'; if(s==='alert')return'Allarme'; if(s==='maintenance')return'Manutenzione'; if(s==='presente')return'Presente'; return s||'-'; }
+  function capitalize(s){ return s? s.charAt(0).toUpperCase()+s.slice(1) : s; }
+  function showNotice(msg){
+    const n = document.getElementById('notice');
+    n.textContent = msg; n.style.display = 'block';
+    clearTimeout(showNotice._t); showNotice._t = setTimeout(()=>{ n.style.display='none'; }, 3500);
+  }
+  function renderCompliancePill(c){
+    if(!c) return '';
+    const cls = c.status==='ok' ? 'pill-ok' : c.status==='due' ? 'pill-due' : 'pill-over';
+    const txt = c.status==='ok' ? 'OK' : c.status==='due' ? 'In scadenza' : 'Scaduta';
+    const date = c.due ? ` • ${c.due}` : '';
+    return `<span class="pill ${cls}" data-comp="${c.status}" title="Filtra per ${txt}">${txt}${date}</span>`;
+  }
+
+  // Rendering mappa
+  function renderMap(list=data){
+    const wrap = document.getElementById('map-wrap');
+    wrap.classList.remove('always-labels','hover-labels','no-labels');
+    const mode = wrap.dataset.labelMode || 'hover';
+    if(mode==='always') wrap.classList.add('always-labels');
+    else if(mode==='hover') wrap.classList.add('hover-labels');
+    else wrap.classList.add('no-labels');
+
+    [...wrap.querySelectorAll('.asset-dot,.label')].forEach(n=>n.remove());
+    const W = wrap.clientWidth, H = wrap.clientHeight;
+    list.forEach(a=>{
+      const {i,c} = dotMeta(a.categoria);
+      const d = document.createElement('div');
+      d.className = `asset-dot ${c}`; d.dataset.id = a.id;
+      d.style.left = (a.x/100*W-17)+'px'; d.style.top  = (a.y/100*H-17)+'px';
+      d.textContent = i; d.title = `${a.nome} (${a.tag||'-'})`;
+      d.addEventListener('click', ()=>{
+        selectRow(a.id);
+        if(HUMAN_CATS.includes(a.categoria)) selectedPersonId = a.id;
+        if(DEVICE_CATS.includes(a.categoria)) selectedDeviceId = a.id;
+      });
+
+      const lbl = document.createElement('div');
+      lbl.className = 'label';
+      const compHtml = a.compliance ? renderCompliancePill(a.compliance) : '';
+      const riskHtml = a.risk==='safety-critical' ? '<span class="pill pill-risk" data-risk="safety-critical" title="Filtra Safety-critical">Rischio</span>' : '';
+      lbl.innerHTML = `${a.nome} (${a.tag||'-'}) • ${a.posizione} ${compHtml} ${riskHtml}`;
+      lbl.style.left = (a.x/100*W+22)+'px'; lbl.style.top  = (a.y/100*H-10)+'px';
+
+      wrap.appendChild(d); wrap.appendChild(lbl);
+    });
+    initActorZones(list);
+    updateChips();
+  }
+
+  // Rendering lista
+  function renderList(list=data){
+    const tbody = document.querySelector('#asset-table tbody'); tbody.innerHTML = '';
+    const filtered = list.filter(a=>{
+      if(complianceFilter && (!a.compliance || a.compliance.status!==complianceFilter)) return false;
+      if(riskFilter && a.risk!==riskFilter) return false;
+      if(stateFilter && a.stato!==stateFilter) return false;
+      return true;
+    });
+    filtered.forEach(a=>{
+      const tr = document.createElement('tr'); tr.dataset.id = a.id;
+      const statePill = `<span class="pill state-pill" data-state="${a.stato}" title="Filtra stato: ${statusLabel(a.stato)}">${statusLabel(a.stato)}</span>`;
+      const riskPill = a.risk==='safety-critical' ? '<span class="pill pill-risk" data-risk="safety-critical" title="Filtra Safety-critical">Safety-critical</span>' : (a.risk||'-');
+      tr.innerHTML = `
+        <td><button class="btn-row" data-action="details" style="background:none;border:none;color:var(--primary);font-weight:700;cursor:pointer" title="Apri dettagli">${a.nome}</button></td>
+        <td>${capitalize(a.categoria)}</td>
+        <td>${a.tag||'-'}</td>
+        <td>${a.posizione}</td>
+        <td>${a.refSpace||'-'}</td>
+        <td>${statePill}</td>
+        <td>${renderCompliancePill(a.compliance)}</td>
+        <td>${riskPill}</td>
+      `;
+      tr.addEventListener('click', (ev)=>{
+        const target = ev.target;
+        if(target.classList.contains('pill')) return;
+        if(target.dataset.action==='details'){ ev.stopPropagation(); openMaintenance(a); return; }
+        selectRow(a.id);
+        if(HUMAN_CATS.includes(a.categoria)) selectedPersonId = a.id;
+        if(DEVICE_CATS.includes(a.categoria)) selectedDeviceId = a.id;
+      });
+      tbody.appendChild(tr);
+    });
+    updateActiveFiltersUI(); updateChips();
+  }
+
+  function selectRow(id){
+    document.querySelectorAll('#asset-table tbody tr').forEach(r=>r.classList.toggle('selected', r.dataset.id===id));
+    document.querySelectorAll('.asset-dot').forEach(d=>d.classList.toggle('selected', d.dataset.id===id));
+  }
+  function updateChips(){
+    document.getElementById('chip-total').textContent = `${data.length} risorse`;
+    const visible = document.querySelectorAll('.asset-dot').length;
+    document.getElementById('chip-visible').textContent = `${visible} visibili`;
+  }
+
+  // Filtri, ricerca, pill
+  document.getElementById('filter-cat').addEventListener('change', applyFilters);
+  document.getElementById('search').addEventListener('input', applyFilters);
+  function applyFilters(){
+    const cat = document.getElementById('filter-cat').value.trim();
+    const term = document.getElementById('search').value.trim().toLowerCase();
+    let list = data;
+    if(cat) list = list.filter(a=>a.categoria===cat);
+    if(term){
+      list = list.filter(a=>{
+        return (a.nome||'').toLowerCase().includes(term) ||
+               (a.tag||'').toLowerCase().includes(term) ||
+               (a.categoria||'').toLowerCase().includes(term) ||
+               (a.posizione||'').toLowerCase().includes(term) ||
+               (a.refSpace||'').toLowerCase().includes(term) ||
+               (a.compliance?.status||'').toLowerCase().includes(term);
+      });
+    }
+    renderMap(list); renderList(list);
+  }
+  document.addEventListener('click', (ev)=>{
+    const el = ev.target;
+    if(el.classList.contains('pill') && el.closest('#asset-table')){
+      if(el.dataset.comp){ complianceFilter = (complianceFilter===el.dataset.comp) ? null : el.dataset.comp; renderList(); }
+      else if(el.dataset.risk){ riskFilter = (riskFilter===el.dataset.risk) ? null : el.dataset.risk; renderList(); }
+      else if(el.dataset.state){ stateFilter = (stateFilter===el.dataset.state) ? null : el.dataset.state; renderList(); }
+    }
+    if(el.classList.contains('pill') && el.closest('.map-wrap')){
+      if(el.dataset.comp){ complianceFilter = (complianceFilter===el.dataset.comp) ? null : el.dataset.comp; renderList(); }
+      if(el.dataset.risk){ riskFilter = (riskFilter===el.dataset.risk) ? null : el.dataset.risk; renderList(); }
+    }
+  });
+  function updateActiveFiltersUI(){
+    const cont = document.getElementById('active-filters'); cont.innerHTML = '';
+    const chips = [];
+    if(complianceFilter) chips.push({k:'Compliance',v:complianceFilter});
+    if(riskFilter) chips.push({k:'Rischio',v:riskFilter});
+    if(stateFilter) chips.push({k:'Stato',v:stateFilter});
+    chips.forEach(ch=>{
+      const b = document.createElement('button'); b.className='filter-chip';
+      b.textContent = `${ch.k}: ${ch.v} ✕`;
+      b.addEventListener('click', ()=>{ if(ch.k==='Compliance') complianceFilter=null; if(ch.k==='Rischio') riskFilter=null; if(ch.k==='Stato') stateFilter=null; renderList(); });
+      cont.appendChild(b);
+    });
+  }
+
+  // Manutenzioni
+  function openMaintenance(asset){
+    if(!MAINT_CATS.includes(asset.categoria)){ showNotice('Nessuno storico manutentivo per questa categoria'); return; }
+    document.getElementById('maint-name').textContent = asset.nome;
+    document.getElementById('maint-tag').textContent = asset.tag || '-';
+    document.getElementById('maint-cat').textContent = capitalize(asset.categoria);
+    document.getElementById('maint-ref').textContent = asset.refSpace || '-';
+    document.getElementById('maint-compliance').innerHTML = renderCompliancePill(asset.compliance) || '-';
+    const list = document.getElementById('maint-list'); list.innerHTML = '';
+    (asset.history||[]).forEach(h=>{
+      const row = document.createElement('div'); row.className = 'maint-item';
+      row.innerHTML = `<div><strong>${h.date}</strong></div><div>${h.type}</div><div>${h.result} — ${h.note||''}</div>`;
+      list.appendChild(row);
+    });
+    document.getElementById('modal-maint').classList.add('open');
+  }
+  document.getElementById('maint-close').addEventListener('click', ()=>document.getElementById('modal-maint').classList.remove('open'));
+
+  // Impostazioni
+  document.getElementById('btn-settings').addEventListener('click', ()=>{
+    document.getElementById('modal-settings').classList.add('open');
+  });
+  document.getElementById('settings-cancel').addEventListener('click', ()=>document.getElementById('modal-settings').classList.remove('open'));
+  document.getElementById('settings-apply').addEventListener('click', ()=>{
+    const url = document.getElementById('set-map-url').value.trim();
+    const h = parseInt(document.getElementById('set-map-height').value||'520',10);
+    const mode = document.getElementById('set-label-mode').value;
+    if(url) document.getElementById('map-img').src = url;
+    document.getElementById('map-wrap').style.height = h+'px';
+    document.getElementById('map-wrap').dataset.labelMode = mode;
+
+    settings.camera.enabled  = document.getElementById('set-cam-enabled').checked;
+    settings.camera.autoOpen = document.getElementById('set-cam-autoopen').checked;
+    settings.camera.beep     = document.getElementById('set-cam-beep').checked;
+    settings.camera.feeds['Sala RM']     = document.getElementById('set-cam-rm').value.trim();
+    settings.camera.feeds['Sala TC']     = document.getElementById('set-cam-tc').value.trim();
+    settings.camera.feeds['Ecografia']   = document.getElementById('set-cam-eco').value.trim();
+    settings.camera.feeds['Magazzino']   = document.getElementById('set-cam-mag').value.trim();
+    settings.camera.feeds['Sala Attesa'] = document.getElementById('set-cam-att').value.trim();
+
+    document.getElementById('modal-settings').classList.remove('open');
+    applyFilters();
+  });
+
+  // Info & Contatti
+  document.getElementById('btn-info').addEventListener('click', openInfo);
+  document.getElementById('info-close').addEventListener('click', closeInfo);
+  function openInfo(){ document.getElementById('modal-info-panel').classList.add('open'); }
+  function closeInfo(){ document.getElementById('modal-info-panel').classList.remove('open'); }
+  async function copyText(selector){
+    try{ const text = document.querySelector(selector).textContent.trim(); await navigator.clipboard.writeText(text); showNotice('Copiato: ' + text);}catch(e){ showNotice('Impossibile copiare'); }
+  }
+  function downloadVCard({fn, org, title, email, tel}){
+    const v = ['BEGIN:VCARD','VERSION:3.0',`FN:${fn}`,`ORG:${org}`,`TITLE:${title}`,`EMAIL;TYPE=INTERNET:${email}`,`TEL;TYPE=WORK,VOICE:${tel}`,'END:VCARD'].join('\n');
+    const blob = new Blob([v], {type:'text/vcard;charset=utf-8'}); const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = fn.replace(/\s+/g,'_') + '.vcf'; document.body.appendChild(a); a.click(); a.remove();
+  }
+
+  // Accessi & Qualifiche
+  document.getElementById('btn-check').addEventListener('click', checkQualifications);
+  function checkQualifications(){
+    const p = selectedPersonId ? data.find(x=>x.id===selectedPersonId) : null;
+    const d = selectedDeviceId ? data.find(x=>x.id===selectedDeviceId) : null;
+    if(!p || !d){ showNotice('Seleziona una persona e un dispositivo per verificare qualifiche.'); return; }
+    const req = d.requiredQuals || []; const has = new Set(p.quals||[]); const missing = req.filter(q=>!has.has(q));
+    if(missing.length===0) showNotice(`Autorizzazione OK: ${p.nome} può usare ${d.nome}.`);
+    else showNotice(`Autorizzazione NEGATA: mancano [${missing.join(', ')}] per utilizzare ${d.nome}.`);
+  }
+
+  document.getElementById('btn-access').addEventListener('click', simulateRestrictedAccess);
+  function simulateRestrictedAccess(){
+    const p = selectedPersonId ? data.find(x=>x.id===selectedPersonId) : data.find(x=>x.categoria==='visitatore');
+    if(!p){ showNotice('Seleziona o assicurati di avere un visitatore.'); return; }
+    moveToZoneAndCheck(p, 'zone-tc', 'Sala TC');
+  }
+  function moveToZoneAndCheck(person, zoneId, zoneName){
+    const wrap = document.getElementById('map-wrap');
+    const dot = [...document.querySelectorAll('.asset-dot')].find(n=>n.dataset.id===person.id);
+    if(!dot) return;
+    dot.style.transition = 'left 1.2s linear, top 1.2s linear';
+    const z = document.getElementById(zoneId);
+    const targetLeft = parseFloat(z.dataset.left)+z.dataset.w/2;
+    const targetTop  = parseFloat(z.dataset.top)+z.dataset.h/2;
+    const W = wrap.clientWidth, H = wrap.clientHeight;
+    dot.classList.add('selected');
+    dot.style.left = (targetLeft/100*W-17)+'px'; dot.style.top  = (targetTop/100*H-17)+'px';
+    setTimeout(()=>{
+      const allowed = (person.zoneAccess||[]).includes(zoneName);
+      if(allowed) showNotice(`${person.nome}: Accesso ammesso in ${zoneName}.`);
+      else showNotice(`${person.nome}: Accesso NEGATO in ${zoneName} (zona ristretta).`);
+      dot.style.left = (person.x/100*W-17)+'px'; dot.style.top  = (person.y/100*H-17)+'px';
+      setTimeout(()=>dot.classList.remove('selected'), 1400);
+    }, 1400);
+  }
+
+  // Live mode
+  document.getElementById('btn-live').addEventListener('click', toggleLive);
+  function toggleLive(){
+    liveOn = !liveOn; const btn = document.getElementById('btn-live');
+    btn.classList.toggle('on', liveOn);
+    btn.innerHTML = liveOn ? '<i class="fa-solid fa-wave-square"></i> Live: ON' : '<i class="fa-solid fa-wave-square"></i> Live: OFF';
+    if(liveOn) startLive(); else stopLive();
+  }
+  function startLive(){
+    const paths = {
+      'p-001': [{x:75,y:20},{x:60,y:22},{x:20,y:22}],
+      'p-002': [{x:82,y:24},{x:55,y:22},{x:38,y:20},{x:32,y:19}],
+      'p-003': [{x:76,y:21},{x:58,y:35},{x:18,y:38},{x:13,y:38}],
+      'p-004': [{x:72,y:30},{x:58,y:35},{x:18,y:38},{x:13,y:38}],
+    };
+    startLive._idx = startLive._idx || {};
+    Object.keys(paths).forEach(id=>{ if(startLive._idx[id]==null) startLive._idx[id]=0; });
+
+    liveTimer = setInterval(()=>{
+      Object.keys(paths).forEach(id=>{
+        const actor = data.find(a=>a.id===id); if(!actor) return;
+        const wp = paths[id][startLive._idx[id]]; if(!wp) return;
+        const step = 1.4, dx = wp.x - actor.x, dy = wp.y - actor.y, dist = Math.hypot(dx,dy);
+        if(dist < step){ actor.x = wp.x; actor.y = wp.y; startLive._idx[id]++; if(id==='p-004'){ checkEcografiaBreach(actor); } }
+        else { actor.x += (dx/dist)*step; actor.y += (dy/dist)*step; }
+        updateDotPosition(actor);
+      });
+    }, 800);
+  }
+  function stopLive(){ clearInterval(liveTimer); liveTimer = null; }
+  function updateDotPosition(a){
+    const wrap = document.getElementById('map-wrap');
+    const W = wrap.clientWidth, H = wrap.clientHeight;
+    const dot = document.querySelector(`.asset-dot[data-id="${a.id}"]`);
+    const lbl = dot ? dot.nextElementSibling : null;
+    if(dot){ dot.style.left = (a.x/100*W-17)+'px'; dot.style.top  = (a.y/100*H-17)+'px'; }
+    if(lbl && lbl.classList.contains('label')){ lbl.style.left = (a.x/100*W+22)+'px'; lbl.style.top  = (a.y/100*H-10)+'px'; }
+    handleZoneTransition(a);
+  }
+  function checkEcografiaBreach(actor){
+    const eco = document.getElementById('zone-eco');
+    const inside = isInsideZonePx(actor, eco);
+    const qualified = (actor.quals||[]).includes('ECO-OP');
+    if(inside && !qualified){
+      const dot = document.querySelector(`.asset-dot[data-id="${actor.id}"]`);
+      if(dot){ dot.classList.add('blink'); showNotice(`ALLARME ACCESSO: ${actor.nome} non qualificato è entrato in Ecografia!`); setTimeout(()=>dot.classList.remove('blink'), 4000); }
+    }
+  }
+  function isInsideZonePx(asset, zoneEl){
+    const wrap = document.getElementById('map-wrap');
+    const W = wrap.clientWidth, H = wrap.clientHeight;
+    const zx = parseFloat(zoneEl.dataset.left)/100*W;
+    const zy = parseFloat(zoneEl.dataset.top)/100*H;
+    const zw = parseFloat(zoneEl.dataset.w)/100*W;
+    const zh = parseFloat(zoneEl.dataset.h)/100*H;
+    const ax = asset.x/100*W, ay = asset.y/100*H;
+    return ax>=zx && ax<=zx+zw && ay>=zy && ay<=zy+zh;
+  }
+
+  // Camera Linkage
+  const prevZoneById = {};
+  function getZoneKeyAtActor(asset){
+    const zones = document.querySelectorAll('.zone');
+    for(const z of zones){
+      if(isInsideZonePx(asset, z)) return z.dataset.key || z.textContent.trim().replace(/\s*\(.*\)\s*$/,'');
+    }
+    return null;
+  }
+  function initActorZones(list){ list.forEach(a=>{ prevZoneById[a.id] = getZoneKeyAtActor(a); }); }
+  function handleZoneTransition(asset){
+    const current = getZoneKeyAtActor(asset);
+    const prev = prevZoneById[asset.id];
+    if(current && current !== prev){
+      prevZoneById[asset.id] = current;
+      triggerCamera(current, asset);
+    } else if(!current){
+      prevZoneById[asset.id] = null;
+    }
+  }
+
+  // Modale Telecamera
+  const camModal = document.getElementById('modal-camera');
+  const camVideo = document.getElementById('cam-video');
+  const camIframe= document.getElementById('cam-iframe');
+  const camZoneEl= document.getElementById('cam-zone');
+  const camLink  = document.getElementById('cam-link');
+  const camLast  = document.getElementById('cam-last');
+  const camLog   = document.getElementById('cam-log');
+  const camInd   = document.getElementById('cam-ind');
+  document.getElementById('cam-close').addEventListener('click', ()=>camModal.classList.remove('open'));
+
+  function isVideoPlayable(url){ return /\.(mp4|webm|ogg)(\?|#|$)/i.test(url); }
+  function triggerCamera(zoneKey, actor){
+    const url = settings.camera.feeds[zoneKey] || '';
+    const who = actor ? `${actor.nome} (${actor.tag||'-'})` : '—';
+    const now = new Date().toLocaleTimeString();
+
+    const item = document.createElement('div');
+    item.className = 'cam-log-item';
+    item.innerHTML = `<strong>${now}</strong> • ${who} è entrato in <em>${zoneKey}</em>`;
+    camLog.prepend(item);
+    while(camLog.children.length > 10) camLog.removeChild(camLog.lastChild);
+
+    camZoneEl.textContent = zoneKey;
+    camLast.textContent = `${now} — Trigger da ${who}`;
+    camInd.style.display = 'inline-flex';
+
+    if(settings.camera.beep) safeBeep();
+
+    if(url){
+      camLink.href = url;
+      if(isVideoPlayable(url)){
+        camIframe.style.display = 'none';
+        camVideo.style.display = 'block';
+        try{ camVideo.src = url; camVideo.play().catch(()=>{}); }catch(e){}
+      }else{
+        camVideo.pause(); camVideo.removeAttribute('src'); camVideo.load();
+        camVideo.style.display = 'none';
+        camIframe.style.display = 'block';
+        camIframe.src = url;
+      }
+    }else{
+      camVideo.pause(); camVideo.removeAttribute('src'); camVideo.load();
+      camIframe.removeAttribute('src'); camIframe.style.display = 'none'; camVideo.style.display = 'block';
+    }
+
+    if(settings.camera.autoOpen){ camModal.classList.add('open'); }
+  }
+  function safeBeep(){
+    try{
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = ctx.createOscillator(); const g = ctx.createGain();
+      o.type = 'sine'; o.frequency.value = 880;
+      g.gain.value = 0.0001;
+      o.connect(g); g.connect(ctx.destination);
+      o.start();
+      g.gain.exponentialRampToValueAtTime(0.05, ctx.currentTime + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.15);
+      o.stop(ctx.currentTime + 0.16);
+      setTimeout(()=>ctx.close(), 300);
+    }catch(e){}
+  }
+
+  // ERP Sync (demo)
+  document.getElementById('btn-sync').addEventListener('click', simulateERPSync);
+  function simulateERPSync(){
+    data.forEach(a=>{ if(DEVICE_CATS.includes(a.categoria) && a.compliance){ a.compliance.status = nextCompliance(a.compliance.status); }});
+    if(!data.find(x=>x.id==='d-est-002')){
+      data.push({ id:'d-est-002', nome:'Estintore B2', categoria:'estintore', tag:'EST-1402',
+        posizione:'Sala RM', refSpace:'Sala RM', x:12, y:28, stato:'active',
+        requiredQuals:[], risk:'safety-critical', compliance:{status:'ok', due:'2026-09-01'},
+        history:[{date:'2025-09-01', type:'Revisione', result:'OK', note:'Cartellino aggiornato'}] });
+    }
+    lastErpSync = new Date();
+    document.getElementById('chip-erp').textContent = `Ultimo sync ERP: ${lastErpSync.toLocaleTimeString()}`;
+    applyFilters();
+    showNotice('Sync ERP/CMMS completato: compliance aggiornata e risorse allineate.');
+  }
+  function nextCompliance(s){ if(s==='ok') return 'due'; if(s==='due') return 'over'; return 'ok'; }
+
+  // Vista switch
+  document.getElementById('btn-dashboard').addEventListener('click', ()=>showView('dashboard'));
+  document.getElementById('btn-mappa').addEventListener('click', ()=>showView('mappa'));
+  document.getElementById('btn-lista').addEventListener('click',  ()=>showView('lista'));
+  function showView(mode){
+    document.getElementById('btn-dashboard').classList.remove('active');
+    document.getElementById('btn-mappa').classList.remove('active');
+    document.getElementById('btn-lista').classList.remove('active');
+    document.getElementById('mainmap').classList.remove('hidden');
+    document.getElementById('asset-list-wrap').classList.remove('hidden');
+    if(mode==='dashboard'){ document.getElementById('btn-dashboard').classList.add('active'); }
+    else if(mode==='mappa'){ document.getElementById('btn-mappa').classList.add('active'); document.getElementById('asset-list-wrap').classList.add('hidden'); }
+    else { document.getElementById('btn-lista').classList.add('active'); document.getElementById('mainmap').classList.add('hidden'); }
+  }
+
+  // Init
+  window.addEventListener('resize', ()=>applyFilters());
+  applyFilters();
+</script>
+</body>
 </html>
